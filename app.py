@@ -14,7 +14,7 @@ if not os.path.exists(FFMPEG_BIN):
     subprocess.run("curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz -o ffmpeg.tar.xz", shell=True)
     subprocess.run("mkdir -p tmpffmpeg && tar -xf ffmpeg.tar.xz -C tmpffmpeg --strip-components=1", shell=True)
     subprocess.run(f"mv tmpffmpeg {FFMPEG_FOLDER}", shell=True)
-    subprocess.run(f"chmod +x {FFMPEG_BIN}", shell=True)
+    subprocess.run(f"chmod 755 {FFMPEG_BIN}", shell=True)
     subprocess.run("rm -f ffmpeg.tar.xz", shell=True)
 
 # Tambahkan ke PATH
