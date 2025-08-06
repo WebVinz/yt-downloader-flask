@@ -35,6 +35,7 @@ def index():
     return render_template('index.html')
 
 @app.route('/download', methods=['POST'])
+@app.route('/download', methods=['POST'])
 def download():
     url = request.form['url']
     quality = request.form['quality']
@@ -42,16 +43,8 @@ def download():
     filepath = os.path.join("downloads", filename)
 
     ydl_opts = {
-        'format': f'bestvideo[height<={quality}]+bestaudio/best',
+        'format': f'best[height<={quality}]',
         'outtmpl': filepath,
-        'merge_output_format': 'mp4',
-        'ffmpeg_location': FFMPEG_BIN,  # ✅ WAJIB pointing ke binary ffmpeg
-        'postprocessors': [{
-            'key': 'FFmpegVideoConvertor',
-            'preferedformat': 'mp4',
-        }],
-        'postprocessor_args': ['-c:v', 'copy', '-c:a', 'aac'],
-        'prefer_ffmpeg': True,
         'noplaylist': True,
         'quiet': True
     }
@@ -62,6 +55,7 @@ def download():
         return send_file(filepath, as_attachment=True)
     except Exception as e:
         return f"<h2>Download Error:</h2><pre>{str(e)}</pre>", 500
+
 
 if __name__ == "__main__":
     from waitress import serve
