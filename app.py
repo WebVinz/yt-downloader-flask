@@ -4,6 +4,7 @@ import subprocess
 from flask import Flask, request, render_template, send_file
 from yt_dlp import YoutubeDL
 
+# === Setup ffmpeg ===
 FFMPEG_DIR = os.path.abspath("ffmpeg")
 FFMPEG_BIN = os.path.join(FFMPEG_DIR, "ffmpeg")
 FFPROBE_BIN = os.path.join(FFMPEG_DIR, "ffprobe")
@@ -21,12 +22,13 @@ if not os.path.exists(FFMPEG_BIN):
 
 os.environ["PATH"] = FFMPEG_DIR + ":" + os.environ["PATH"]
 
-# 🧪 Debug cek
+# Debug
 print("✅ WHICH ffmpeg:", subprocess.getoutput("which ffmpeg"))
 print("✅ ffmpeg version:\n", subprocess.getoutput("ffmpeg -version"))
 print("✅ ffmpeg exists:", os.path.exists(FFMPEG_BIN))
 print("✅ ffmpeg is executable:", os.access(FFMPEG_BIN, os.X_OK))
 
+# === Flask App ===
 app = Flask(__name__)
 os.makedirs("downloads", exist_ok=True)
 
@@ -35,16 +37,24 @@ def index():
     return render_template('index.html')
 
 @app.route('/download', methods=['POST'])
-@app.route('/download', methods=['POST'])
 def download():
     url = request.form['url']
     quality = request.form['quality']
     filename = f"{uuid.uuid4()}.mp4"
     filepath = os.path.join("downloads", filename)
 
+    # === Download Options ===
     ydl_opts = {
-        'format': f'best[height<={quality}]',
+        'format': f'bestvideo[height<={quality}]+bestaudio/best',
         'outtmpl': filepath,
+        'ffmpeg_location': FFMPEG_BIN,
+        'merge_output_format': 'mp4',
+        'postprocessors': [{
+            'key': 'FFmpegVideoConvertor',
+            'preferedformat': 'mp4',
+        }],
+        'postprocessor_args': ['-c:v', 'copy', '-c:a', 'aac'],
+        'prefer_ffmpeg': True,
         'noplaylist': True,
         'quiet': True
     }
@@ -55,7 +65,6 @@ def download():
         return send_file(filepath, as_attachment=True)
     except Exception as e:
         return f"<h2>Download Error:</h2><pre>{str(e)}</pre>", 500
-
 
 if __name__ == "__main__":
     from waitress import serve
