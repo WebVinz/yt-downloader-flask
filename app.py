@@ -11,9 +11,8 @@ if not os.path.exists("ffmpeg"):
         if item.startswith("ffmpeg") and os.path.isdir(item):
             os.rename(item, "ffmpeg")
             break
+os.environ["PATH"] = os.getcwd() + "/ffmpeg:" + os.environ["PATH"]
 
-# Tambahkan ffmpeg ke PATH
-os.environ["PATH"] = os.path.join(os.getcwd(), "ffmpeg") + os.pathsep + os.environ["PATH"]
 
 app = Flask(__name__)
 
