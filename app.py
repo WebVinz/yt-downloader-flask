@@ -5,6 +5,7 @@ from flask import Flask, request, render_template, send_file
 from yt_dlp import YoutubeDL
 
 # ✅ Download dan siapkan ffmpeg saat runtime (di Railway)
+# ✅ Download dan siapkan ffmpeg saat runtime (di Railway)
 if not os.path.exists("ffmpeg"):
     subprocess.run(
         "curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz | tar -xJ",
@@ -14,9 +15,12 @@ if not os.path.exists("ffmpeg"):
         if item.startswith("ffmpeg") and os.path.isdir(item):
             os.rename(item, "ffmpeg")
             break
+    # ⚠️ Tambahkan izin eksekusi
+    subprocess.run("chmod +x ffmpeg/ffmpeg ffmpeg/ffprobe", shell=True)
 
-# Tambahkan ffmpeg ke PATH agar yt-dlp bisa pakai
-os.environ["PATH"] = os.getcwd() + "/ffmpeg:" + os.environ["PATH"]
+# ✅ Tambahkan ffmpeg ke PATH
+os.environ["PATH"] = os.path.abspath("ffmpeg") + ":" + os.environ["PATH"]
+
 
 # ✅ Inisialisasi Flask
 app = Flask(__name__)
