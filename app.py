@@ -4,14 +4,13 @@ import subprocess
 from flask import Flask, request, render_template, send_file
 from yt_dlp import YoutubeDL
 
-# ====== FIXED: Setup ffmpeg (download & permission) ======
-
+# === ⬇️ Setup ffmpeg (Railway-safe) ===
 FFMPEG_DIR = os.path.abspath("ffmpeg")
 FFMPEG_BIN = os.path.join(FFMPEG_DIR, "ffmpeg")
+FFPROBE_BIN = os.path.join(FFMPEG_DIR, "ffprobe")
 
-# Jika belum ada, download dan extract ffmpeg
+# Download ffmpeg jika belum ada
 if not os.path.exists(FFMPEG_BIN):
-    print("⬇️ Downloading ffmpeg...")
     subprocess.run(
         "curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz | tar -xJ",
         shell=True,
@@ -20,18 +19,17 @@ if not os.path.exists(FFMPEG_BIN):
         if item.startswith("ffmpeg") and os.path.isdir(item):
             os.rename(item, "ffmpeg")
             break
-    # Tambah permission
+    # Tambahkan permission
     subprocess.run("chmod +x ffmpeg/ffmpeg ffmpeg/ffprobe", shell=True)
 
-# Tambah ke PATH
+# Tambahkan ffmpeg ke PATH
 os.environ["PATH"] = FFMPEG_DIR + ":" + os.environ["PATH"]
 
-# Debug log (optional)
-print("✅ PATH:", os.environ["PATH"])
-print("✅ Which ffmpeg:", subprocess.getoutput("which ffmpeg"))
+# Debug check (penting!)
+print("✅ WHICH ffmpeg:", subprocess.getoutput("which ffmpeg"))
 print("✅ ffmpeg version:\n", subprocess.getoutput("ffmpeg -version"))
 
-# ====== Flask Setup ======
+# === Flask setup ===
 app = Flask(__name__)
 os.makedirs("downloads", exist_ok=True)
 
@@ -50,7 +48,7 @@ def download():
         'format': f'bestvideo[height<={quality}]+bestaudio/best',
         'outtmpl': filepath,
         'merge_output_format': 'mp4',
-        'prefer_ffmpeg': True,
+        'ffmpeg_location': FFMPEG_BIN,
         'postprocessors': [{
             'key': 'FFmpegVideoConvertor',
             'preferedformat': 'mp4',
@@ -59,6 +57,7 @@ def download():
             '-c:v', 'copy',
             '-c:a', 'aac'
         ],
+        'prefer_ffmpeg': True,
         'noplaylist': True,
         'quiet': True
     }
@@ -68,7 +67,7 @@ def download():
             ydl.download([url])
         return send_file(filepath, as_attachment=True)
     except Exception as e:
-        return f"<h1>Error saat download:</h1><pre>{str(e)}</pre>", 500
+        return f"<h2>Download Error:</h2><pre>{str(e)}</pre>", 500
 
 if __name__ == "__main__":
     from waitress import serve
