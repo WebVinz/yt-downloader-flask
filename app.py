@@ -4,16 +4,21 @@ import subprocess
 from flask import Flask, request, render_template, send_file
 from yt_dlp import YoutubeDL
 
-# ✅ Setup ffmpeg
+# ✅ Download dan siapkan ffmpeg saat runtime (di Railway)
 if not os.path.exists("ffmpeg"):
-    subprocess.run("curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz | tar -xJ", shell=True)
+    subprocess.run(
+        "curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz | tar -xJ",
+        shell=True,
+    )
     for item in os.listdir():
         if item.startswith("ffmpeg") and os.path.isdir(item):
             os.rename(item, "ffmpeg")
             break
+
+# Tambahkan ffmpeg ke PATH agar yt-dlp bisa pakai
 os.environ["PATH"] = os.getcwd() + "/ffmpeg:" + os.environ["PATH"]
 
-
+# ✅ Inisialisasi Flask
 app = Flask(__name__)
 
 @app.route('/')
@@ -28,7 +33,6 @@ def download():
     filename = f"{uuid.uuid4()}.mp4"
     filepath = os.path.join("downloads", filename)
 
-    # ✅ ydl_opts ini harus berada DI DALAM fungsi dan indentasinya benar
     ydl_opts = {
         'format': f'bestvideo[height<={quality}]+bestaudio/best',
         'outtmpl': filepath,
@@ -38,9 +42,8 @@ def download():
             'preferedformat': 'mp4',
         }],
         'postprocessor_args': [
-            '-c:v', 'copy',
-            '-c:a', 'aac',
-            '-b:a', '192k'
+            '-c:v', 'copy',  # jangan encode ulang video
+            '-c:a', 'aac'    # convert audio dari opus ke aac
         ]
     }
 
@@ -49,6 +52,7 @@ def download():
 
     return send_file(filepath, as_attachment=True)
 
+# ✅ Jalankan Flask pada port Railway
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(debug=False, host="0.0.0.0", port=port)
+    app.run(debug=False, host='0.0.0.0', port=port)
