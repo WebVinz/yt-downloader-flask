@@ -44,7 +44,7 @@ def download():
     filename = f"{uuid.uuid4()}.mp4"
     filepath = os.path.join("downloads", filename)
 
-        ydl_opts = {
+    ydl_opts = {
         'format': f'bestvideo[height<={quality}]+bestaudio/best',
         'outtmpl': filepath,
         'merge_output_format': 'mp4',
