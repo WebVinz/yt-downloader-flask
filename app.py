@@ -7,13 +7,6 @@ from yt_dlp import YoutubeDL
 FFMPEG_FOLDER = "ffmpeg"
 FFMPEG_BIN = os.path.join(os.getcwd(), FFMPEG_FOLDER, "ffmpeg")
 
-# Jika ffmpeg belum ada, download versi pre-built yang sudah executable
-if not os.path.exists(FFMPEG_BIN):
-    print("⏬ Downloading static ffmpeg binary...")
-    os.makedirs(FFMPEG_FOLDER, exist_ok=True)
-    subprocess.run(f"curl -Lo {FFMPEG_BIN} https://github.com/yt-dlp/FFmpeg-Builds/releases/latest/download/ffmpeg-linux64", shell=True)
-    subprocess.run(f"chmod +x {FFMPEG_BIN}", shell=True)
-
 # Tambahkan ke PATH
 os.environ["PATH"] = os.path.dirname(FFMPEG_BIN) + ":" + os.environ["PATH"]
 
