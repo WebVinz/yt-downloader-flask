@@ -42,11 +42,10 @@ def download():
     filename = f"{uuid.uuid4()}.mp4"
     filepath = os.path.join("downloads", filename)
 
-    # === Download Options ===
-    y    ydl_opts = {
+    ydl_opts = {
         'format': f'bestvideo[height<={quality}]+bestaudio/best',
         'outtmpl': filepath,
-        'ffmpeg_location': FFMPEG_BIN,  # BUKAN folder, tapi file binary
+        'ffmpeg_location': FFMPEG_BIN,  # harus path ke file ffmpeg
         'merge_output_format': 'mp4',
         'postprocessors': [{
             'key': 'FFmpegVideoConvertor',
