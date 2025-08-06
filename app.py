@@ -4,12 +4,10 @@ import subprocess
 from flask import Flask, request, render_template, send_file
 from yt_dlp import YoutubeDL
 
-# === ⬇️ Setup ffmpeg (Railway-safe) ===
 FFMPEG_DIR = os.path.abspath("ffmpeg")
 FFMPEG_BIN = os.path.join(FFMPEG_DIR, "ffmpeg")
 FFPROBE_BIN = os.path.join(FFMPEG_DIR, "ffprobe")
 
-# Download ffmpeg jika belum ada
 if not os.path.exists(FFMPEG_BIN):
     subprocess.run(
         "curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz | tar -xJ",
@@ -19,17 +17,16 @@ if not os.path.exists(FFMPEG_BIN):
         if item.startswith("ffmpeg") and os.path.isdir(item):
             os.rename(item, "ffmpeg")
             break
-    # Tambahkan permission
     subprocess.run("chmod +x ffmpeg/ffmpeg ffmpeg/ffprobe", shell=True)
 
-# Tambahkan ffmpeg ke PATH
 os.environ["PATH"] = FFMPEG_DIR + ":" + os.environ["PATH"]
 
-# Debug check (penting!)
+# 🧪 Debug cek
 print("✅ WHICH ffmpeg:", subprocess.getoutput("which ffmpeg"))
 print("✅ ffmpeg version:\n", subprocess.getoutput("ffmpeg -version"))
+print("✅ ffmpeg exists:", os.path.exists(FFMPEG_BIN))
+print("✅ ffmpeg is executable:", os.access(FFMPEG_BIN, os.X_OK))
 
-# === Flask setup ===
 app = Flask(__name__)
 os.makedirs("downloads", exist_ok=True)
 
@@ -48,15 +45,12 @@ def download():
         'format': f'bestvideo[height<={quality}]+bestaudio/best',
         'outtmpl': filepath,
         'merge_output_format': 'mp4',
-        'ffmpeg_location': FFMPEG_DIR,  # HARUS path ke folder
+        'ffmpeg_location': FFMPEG_BIN,  # ✅ WAJIB pointing ke binary ffmpeg
         'postprocessors': [{
             'key': 'FFmpegVideoConvertor',
             'preferedformat': 'mp4',
         }],
-        'postprocessor_args': [
-            '-c:v', 'copy',
-            '-c:a', 'aac'
-        ],
+        'postprocessor_args': ['-c:v', 'copy', '-c:a', 'aac'],
         'prefer_ffmpeg': True,
         'noplaylist': True,
         'quiet': True
