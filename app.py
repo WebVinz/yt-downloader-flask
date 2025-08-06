@@ -3,14 +3,15 @@ import uuid
 import subprocess
 from flask import Flask, request, render_template, send_file
 from yt_dlp import YoutubeDL
+import imageio_ffmpeg as ffmpeg
 
-from ffmpeg_static_python import FFmpegStatic
-FFMPEG_BIN = FFmpegStatic.get_ffmpeg_path()
+# Ambil path ffmpeg dari imageio_ffmpeg
+FFMPEG_BIN = ffmpeg.get_ffmpeg_exe()
 
 # Tambahkan ke PATH
-os.environ["PATH"] = os.path.dirname(FFMPEG_BIN) + ":" + os.environ["PATH"]
+os.environ["PATH"] = os.path.dirname(FFMPEG_BIN) + ":" + os.environ.get("PATH", "")
 
-# Debug
+# Debug info
 print("✅ ffmpeg path:", FFMPEG_BIN)
 print("✅ ffmpeg version:\n", subprocess.getoutput(f"{FFMPEG_BIN} -version"))
 print("✅ ffmpeg exists:", os.path.exists(FFMPEG_BIN))
@@ -34,7 +35,7 @@ def download():
     ydl_opts = {
         'format': f'bestvideo[height<={quality}]+bestaudio/best',
         'outtmpl': filepath,
-        'ffmpeg_location': FFMPEG_BIN,  # harus path ke file ffmpeg
+        'ffmpeg_location': FFMPEG_BIN,
         'merge_output_format': 'mp4',
         'postprocessors': [{
             'key': 'FFmpegVideoConvertor',
@@ -55,4 +56,4 @@ def download():
 
 if __name__ == "__main__":
     from waitress import serve
-    serve(app, host="0.0.0.0", port=8080)
+    serve(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
