@@ -4,8 +4,8 @@ import subprocess
 from flask import Flask, request, render_template, send_file
 from yt_dlp import YoutubeDL
 
-from ffmpeg_static import get_ffmpeg_path
-FFMPEG_BIN = get_ffmpeg_path()
+from ffmpeg_static_python import FFmpegStatic
+FFMPEG_BIN = FFmpegStatic.get_ffmpeg_path()
 
 # Tambahkan ke PATH
 os.environ["PATH"] = os.path.dirname(FFMPEG_BIN) + ":" + os.environ["PATH"]
