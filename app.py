@@ -4,27 +4,26 @@ import subprocess
 from flask import Flask, request, render_template, send_file
 from yt_dlp import YoutubeDL
 
-# === Setup ffmpeg ===
-FFMPEG_DIR = os.path.abspath("ffmpeg")
-FFMPEG_BIN = os.path.join(FFMPEG_DIR, "ffmpeg")
-FFPROBE_BIN = os.path.join(FFMPEG_DIR, "ffprobe")
+# === Setup ffmpeg static ===
+FFMPEG_FOLDER = "ffmpeg"
+FFMPEG_BIN = os.path.join(os.getcwd(), FFMPEG_FOLDER, "ffmpeg")
 
+# Cek apakah ffmpeg sudah ada
 if not os.path.exists(FFMPEG_BIN):
-    subprocess.run(
-        "curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz | tar -xJ",
-        shell=True,
-    )
-    for item in os.listdir():
-        if item.startswith("ffmpeg") and os.path.isdir(item):
-            os.rename(item, "ffmpeg")
-            break
-    subprocess.run("chmod +x ffmpeg/ffmpeg ffmpeg/ffprobe", shell=True)
+    print("⏬ Downloading ffmpeg...")
+    subprocess.run("curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz -o ffmpeg.tar.xz", shell=True)
+    subprocess.run("mkdir -p tmpffmpeg && tar -xf ffmpeg.tar.xz -C tmpffmpeg --strip-components=1", shell=True)
+    subprocess.run(f"mv tmpffmpeg {FFMPEG_FOLDER}", shell=True)
+    subprocess.run(f"chmod +x {FFMPEG_BIN}", shell=True)
+    subprocess.run("rm -f ffmpeg.tar.xz", shell=True)
 
-os.environ["PATH"] = FFMPEG_DIR + ":" + os.environ["PATH"]
+# Tambahkan ke PATH
+os.environ["PATH"] = os.path.dirname(FFMPEG_BIN) + ":" + os.environ["PATH"]
 
 # Debug
-print("✅ WHICH ffmpeg:", subprocess.getoutput("which ffmpeg"))
-print("✅ ffmpeg version:\n", subprocess.getoutput("ffmpeg -version"))
+print("✅ ffmpeg path:", FFMPEG_BIN)
+print("✅ ffmpeg version:\n", subprocess.getoutput(f"{FFMPEG_BIN} -version"))
+
 print("✅ ffmpeg exists:", os.path.exists(FFMPEG_BIN))
 print("✅ ffmpeg is executable:", os.access(FFMPEG_BIN, os.X_OK))
 
@@ -44,10 +43,10 @@ def download():
     filepath = os.path.join("downloads", filename)
 
     # === Download Options ===
-    ydl_opts = {
+    y    ydl_opts = {
         'format': f'bestvideo[height<={quality}]+bestaudio/best',
         'outtmpl': filepath,
-        'ffmpeg_location': FFMPEG_BIN,
+        'ffmpeg_location': FFMPEG_BIN,  # BUKAN folder, tapi file binary
         'merge_output_format': 'mp4',
         'postprocessors': [{
             'key': 'FFmpegVideoConvertor',
