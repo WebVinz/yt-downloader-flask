@@ -4,18 +4,15 @@ import subprocess
 from flask import Flask, request, render_template, send_file
 from yt_dlp import YoutubeDL
 
-# === Setup ffmpeg static ===
 FFMPEG_FOLDER = "ffmpeg"
 FFMPEG_BIN = os.path.join(os.getcwd(), FFMPEG_FOLDER, "ffmpeg")
 
-# Cek apakah ffmpeg sudah ada
+# Jika ffmpeg belum ada, download versi pre-built yang sudah executable
 if not os.path.exists(FFMPEG_BIN):
-    print("⏬ Downloading ffmpeg...")
-    subprocess.run("curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz -o ffmpeg.tar.xz", shell=True)
-    subprocess.run("mkdir -p tmpffmpeg && tar -xf ffmpeg.tar.xz -C tmpffmpeg --strip-components=1", shell=True)
-    subprocess.run(f"mv tmpffmpeg {FFMPEG_FOLDER}", shell=True)
-    subprocess.run(f"chmod 755 {FFMPEG_BIN}", shell=True)
-    subprocess.run("rm -f ffmpeg.tar.xz", shell=True)
+    print("⏬ Downloading static ffmpeg binary...")
+    os.makedirs(FFMPEG_FOLDER, exist_ok=True)
+    subprocess.run(f"curl -Lo {FFMPEG_BIN} https://github.com/yt-dlp/FFmpeg-Builds/releases/latest/download/ffmpeg-linux64", shell=True)
+    subprocess.run(f"chmod +x {FFMPEG_BIN}", shell=True)
 
 # Tambahkan ke PATH
 os.environ["PATH"] = os.path.dirname(FFMPEG_BIN) + ":" + os.environ["PATH"]
@@ -23,7 +20,6 @@ os.environ["PATH"] = os.path.dirname(FFMPEG_BIN) + ":" + os.environ["PATH"]
 # Debug
 print("✅ ffmpeg path:", FFMPEG_BIN)
 print("✅ ffmpeg version:\n", subprocess.getoutput(f"{FFMPEG_BIN} -version"))
-
 print("✅ ffmpeg exists:", os.path.exists(FFMPEG_BIN))
 print("✅ ffmpeg is executable:", os.access(FFMPEG_BIN, os.X_OK))
 
