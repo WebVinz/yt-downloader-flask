@@ -1,57 +1,50 @@
-import subprocess
 import os
-
-# 🛠️ Install ffmpeg at runtime
-subprocess.run("curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz | tar -xJ", shell=True)
-subprocess.run("mv ffmpeg-* ffmpeg-dir && chmod +x ffmpeg-dir/ffmpeg", shell=True)
-os.environ["PATH"] = os.getcwd() + "/ffmpeg-dir:" + os.environ["PATH"]
-
+import uuid
+import subprocess
 from flask import Flask, request, render_template, send_file
 from yt_dlp import YoutubeDL
-import uuid
-# ...
 
+# ✅ Setup ffmpeg (Runtime untuk Railway atau server)
+if not os.path.exists("ffmpeg"):
+    subprocess.run("curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz | tar -xJ", shell=True)
+    for item in os.listdir():
+        if item.startswith("ffmpeg") and os.path.isdir(item):
+            os.rename(item, "ffmpeg")
+            break
+    os.environ["PATH"] = os.getcwd() + "/ffmpeg:" + os.environ["PATH"]
+
+# ✅ Flask setup
 app = Flask(__name__)
-DOWNLOAD_DIR = os.path.join(os.getcwd(), "downloads")
 
-@app.route('/', methods=['GET'])
+@app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/download', methods=['POST'])
-def download_video():
+def download():
     url = request.form['url']
     quality = request.form['quality']
 
-    filename_id = str(uuid.uuid4())  # generate random filename
-    output_template = os.path.join(DOWNLOAD_DIR, f"{filename_id}.%(ext)s")
+    filename = f"{uuid.uuid4()}.mp4"
+    filepath = os.path.join("downloads", filename)
 
+    # ✅ Ini yang benar: ydl_opts + convert audio ke AAC
     ydl_opts = {
-    'format': f"bestvideo[height<={quality}][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
-    'outtmpl': output_template,
-    'merge_output_format': 'mp4',
-    'quiet': True,
-}
+        'format': f'bestvideo[height<={quality}]+bestaudio/best',
+        'outtmpl': filepath,
+        'merge_output_format': 'mp4',
+        'postprocessor_args': [
+            '-c:v', 'copy',     # video tidak di-re-encode
+            '-c:a', 'aac'       # audio dikonversi ke AAC
+        ]
+    }
 
-    try:
-        with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.download([url])
+    with YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])
 
-        # cari file hasil download
-        downloaded_file = None
-        for ext in ['mp4', 'mkv', 'webm']:
-            possible_path = os.path.join(DOWNLOAD_DIR, f"{filename_id}.{ext}")
-            if os.path.exists(possible_path):
-                downloaded_file = possible_path
-                break
+    return send_file(filepath, as_attachment=True)
 
-        if not downloaded_file:
-            return "Gagal menemukan file hasil download.", 500
-
-        return send_file(downloaded_file, as_attachment=True)
-
-    except Exception as e:
-        return f"Gagal mendownload: {str(e)}", 500
-
+# ✅ Listen to Railway port
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=False, host="0.0.0.0", port=port)
