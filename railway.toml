@@ -1,2 +1,2 @@
 [build]
-start = "python app.py"
+builder = "NIXPACKS"
